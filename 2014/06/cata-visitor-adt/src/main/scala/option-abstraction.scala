@@ -14,7 +14,7 @@ trait OptionModule {
 
   type None <: OptionInt
 
-  def someInt(x: Int): OptionInt
+  def some(x: Int): OptionInt
 
   def none: OptionInt
 
@@ -48,10 +48,10 @@ trait OptionVisitorModule extends OptionModule {
 
   trait Visitor[T] {
     def visit(none: None): T
-    def visit(someInt: SomeInt): T
+    def visit(some: SomeInt): T
   }
 
-  def someInt(x: Int): OptionInt = new SomeInt(x)
+  def some(x: Int): OptionInt = new SomeInt(x)
 
   val none: OptionInt = new None()
 
@@ -73,7 +73,7 @@ trait ScalaOptionModule extends OptionModule {
 
   type None = scala.None.type
 
-  def someInt(x: Int): OptionInt = Some(x)
+  def some(x: Int): OptionInt = Some(x)
 
   val none: OptionInt = scala.None
 
@@ -86,7 +86,7 @@ trait ScalaOptionModule extends OptionModule {
 
 /** an abstract Program, waiting for a OptionModule to work */
 trait Program extends App with OptionModule with ShowOption {
-  val opt = someInt(42)
+  val opt = some(42)
   println(show(opt)) // will print Some(42)
 }
 
