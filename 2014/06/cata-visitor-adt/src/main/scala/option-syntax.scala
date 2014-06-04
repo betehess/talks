@@ -126,7 +126,7 @@ class Syntax[Sig <: OptionSig] {
 
 
 
-class Program[Sig <: OptionSig](implicit Ops: OptionOps[Sig], Syntax: Syntax[Sig], Flatten: Flatten[Sig]) extends App {
+class Program[Sig <: OptionSig](implicit Ops: OptionOps[Sig], Syntax: Syntax[Sig]) extends App {
   import Ops._
   import Syntax._
   println(some(some(42)).flatten.show) // will print Some(42)

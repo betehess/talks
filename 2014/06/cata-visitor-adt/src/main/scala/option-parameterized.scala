@@ -35,7 +35,7 @@ class Show[Sig <: OptionSig](implicit ops: OptionOps[Sig]) {
 
 object Show {
 
-  def apply[Sig <: OptionSig](implicit ops: OptionOps[Sig]): Show[Sig] =
+  implicit def apply[Sig <: OptionSig](implicit ops: OptionOps[Sig]): Show[Sig] =
     new Show[Sig]
 
 }
@@ -71,10 +71,9 @@ object ScalaOption {
 
 
 
-class Program[Sig <: OptionSig](implicit Ops: OptionOps[Sig]) extends App {
+class Program[Sig <: OptionSig](implicit Ops: OptionOps[Sig], Show: Show[Sig]) extends App {
   import Ops._
-  val MyShow = Show[Sig]
-  import MyShow._
+  import Show._
   val opt: Sig#Option[Int] = some(42)
   println(show(opt)) // will print Some(42)
 }

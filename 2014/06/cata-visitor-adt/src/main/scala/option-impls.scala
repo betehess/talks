@@ -60,8 +60,6 @@ object ScalaOption {
 
   }
 
-  implicit object Syntax extends Syntax[ScalaOption]
-
 }
 
 
@@ -99,8 +97,6 @@ object Java8Option {
 
   }
 
-  implicit object Syntax extends Syntax[Java8Option]
-
 }
 
 
@@ -130,8 +126,6 @@ object NullOption {
     }
 
   }
-
-  implicit object Syntax extends Syntax[NullOption]
 
 }
 
@@ -202,12 +196,19 @@ class Syntax[Sig <: OptionSig] {
 
 }
 
+object Syntax {
+
+  implicit def apply[Sig <: OptionSig](implicit ops: OptionOps[Sig]): Syntax[Sig] =
+    new Syntax[Sig]
+
+}
 
 
 
 
 
-class Program[Sig <: OptionSig](implicit Ops: OptionOps[Sig], Syntax: Syntax[Sig], Flatten: Flatten[Sig]) extends App {
+
+class Program[Sig <: OptionSig](implicit Ops: OptionOps[Sig], Syntax: Syntax[Sig]) extends App {
   import Ops._
   import Syntax._
   println(Some(Some(42)).flatten.show) // will print Some(42)

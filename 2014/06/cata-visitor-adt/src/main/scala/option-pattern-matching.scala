@@ -9,9 +9,9 @@ case object None extends Option[Nothing]
 object Main extends App {
 
   def flatten[T](oo: Option[Option[T]]): Option[T] = oo match {
-    case Some(Some(x)) => Some(x)
-    case Some(None)    => None
     case None          => None
+    case Some(None)    => None
+    case Some(Some(x)) => Some(x)
   }
 
   assert(flatten(Some(Some(42))) == Some(42))
