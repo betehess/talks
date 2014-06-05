@@ -6,14 +6,14 @@
     <style type="text/css">
      @import url(http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
      @import url(http://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
-/*     @import url(http://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);*/
+     @import url(http://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
 
      body { font-family: 'Droid Serif'; }
      h1, h2, h3 {
        font-family: 'Yanone Kaffeesatz';
        font-weight: normal;
      }
-/*     .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }*/
+     .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
     </style>
   </head>
   <body>
@@ -300,7 +300,7 @@ println(eval(expr)) // prints 5
 
 ---
 
-# Option[A] data type
+# `Option[A]` data type
 
 ```scala
 sealed trait Option[+A]
@@ -323,7 +323,7 @@ assert(flatten(Some(None)) == None)
 
 ---
 
-# deconstructing Scala case classes
+# deconstructing Scala case classes [1/2]
 
 ## existence of types & subtyping information
 
@@ -334,6 +334,10 @@ type SomeInt <: OptionInt
 
 type None <: OptionInt
 ```
+
+---
+
+# deconstructing Scala case classes [2/2]
 
 ## injectors
 
@@ -352,9 +356,7 @@ def fold[T](opt: OptionInt)(ifNone: => T, ifSome: Int => T): T
 
 ---
 
-# deconstructing Scala case classes
-
-## as a module
+# abstracted case classes
 
 ```scala
 trait OptionModule {
@@ -392,7 +394,7 @@ trait ShowOption extends OptionModule {
 
 ---
 
-# `OptionInt` as visitor
+# `OptionInt` as visitor [1/2]
 
 ```scala
 trait OptionVisitorModule extends OptionModule {
@@ -413,7 +415,13 @@ trait OptionVisitorModule extends OptionModule {
     def visit(none: None): T
     def visit(some: SomeInt): T
   }
+```
 
+---
+
+# `OptionInt` as visitor [1/2]
+
+```scala
   def some(x: Int): OptionInt = new SomeInt(x)
 
   val none: OptionInt = new None()
@@ -430,7 +438,7 @@ trait OptionVisitorModule extends OptionModule {
 
 ---
 
-# `OptionInt` as `scala.Option[Int]`
+# `OptionInt` as Scala's `Option[Int]`
 
 ```scala
 trait ScalaOptionModule extends OptionModule {
@@ -464,7 +472,6 @@ trait Program extends App with OptionModule with ShowOption {
   val opt = some(42)
   println(show(opt)) // will print Some(42)
 }
-
 
 object MainWithVisitor extends Program with OptionVisitorModule
 
@@ -558,7 +565,9 @@ object MainWithScalaOption extends Program with ScalaOptionModule
 
 ---
 
-# modules as a typeclass (aka modules a la ML)
+# modules as a typeclass
+
+## aka modules a la ML
 
 ```scala
 trait OptionSig {
@@ -600,8 +609,9 @@ class Show[Sig <: OptionSig](implicit ops: OptionOps[Sig]) {
 
 ---
 
-# implementations as implicit typeclass instances
+# implementations as typeclass instances
 
+```scala
 trait ScalaOption extends OptionSig {
 
   type OptionInt = scala.Option[Int]
@@ -615,16 +625,13 @@ trait ScalaOption extends OptionSig {
 object ScalaOption {
 
   implicit object Ops extends OptionOps[ScalaOption] {
-
     def some(x: Int): ScalaOption#OptionInt = Some(x)
-
     val none: ScalaOption#OptionInt = scala.None
-
-    def fold[T](opt: ScalaOption#OptionInt)(ifNone: => T, ifSome: Int => T): T = opt match {
-      case scala.None    => ifNone
-      case scala.Some(x) => ifSome(x)
-    }
-
+    def fold[T](opt: ScalaOption#OptionInt)(ifNone: => T, ifSome: Int => T): T =
+      opt match {
+        case scala.None    => ifNone
+        case scala.Some(x) => ifSome(x)
+      }
   }
 
   implicit object Show extends Show[ScalaOption]
@@ -638,13 +645,13 @@ object ScalaOption {
 # programs as functors
 
 ```scala
-class Program[Sig <: OptionSig](implicit Ops: OptionOps[Sig], Show: Show[Sig]) extends App {
+class Program[Sig <: OptionSig](implicit Ops: OptionOps[Sig], Show: Show[Sig])
+extends App {
   import Ops._
   import Show._
   val opt = some(42)
   println(show(opt)) // will print Some(42)
 }
-
 
 object MainWithScalaOption extends Program[ScalaOption]
 ```
@@ -655,6 +662,7 @@ object MainWithScalaOption extends Program[ScalaOption]
 
 # deriving functors automatically
 
+```scala
 class Show[Sig <: OptionSig](implicit ops: OptionOps[Sig]) {
 
   import ops._
@@ -714,7 +722,7 @@ trait OptionOps[Sig <: OptionSig] {
 
 
 
-```
+---
 
 # `Show` functor
 
@@ -741,7 +749,7 @@ object Show {
 
 ---
 
-# `Option[A]` as `scala.Option[A]`
+# `Option[A]` as Scala's `Option[A]`
 
 ```scala
 trait ScalaOption extends OptionSig {
@@ -762,10 +770,11 @@ object ScalaOption {
 
     val none: ScalaOption#None = scala.None
 
-    def fold[A, B](opt: ScalaOption#Option[A])(ifNone: => B, ifSome: A => B): B = opt match {
-      case scala.None    => ifNone
-      case scala.Some(x) => ifSome(x)
-    }
+    def fold[A, B](opt: ScalaOption#Option[A])(ifNone: => B, ifSome: A => B): B =
+      opt match {
+        case scala.None    => ifNone
+        case scala.Some(x) => ifSome(x)
+      }
 
   }
 
@@ -845,22 +854,21 @@ how to write `myOption.flatten.show`?
 
 ```scala
 class OptionW[Sig <: OptionSig, T](val opt: Sig#Option[T]) extends AnyVal {
-
   def show(implicit S: Show[Sig]): String = S.show(opt)
-
 }
 
-class OptionOptionW[Sig <: OptionSig, T](val oo: Sig#Option[Sig#Option[T]]) extends AnyVal {
-
+class OptionOptionW[Sig <: OptionSig, T](val oo: Sig#Option[Sig#Option[T]])
+extends AnyVal {
   def flatten(implicit F: Flatten[Sig]): Sig#Option[T] = F.flatten(oo)
-
 }
 
 class Syntax[Sig <: OptionSig] {
 
-  implicit def optionW[T](opt: Sig#Option[T]): OptionW[Sig, T] = new OptionW[Sig, T](opt)
+  implicit def optionW[T](opt: Sig#Option[T]): OptionW[Sig, T] =
+    new OptionW[Sig, T](opt)
 
-  implicit def optionOptionW[T](oo: Sig#Option[Sig#Option[T]]): OptionOptionW[Sig, T] = new OptionOptionW[Sig, T](oo)
+  implicit def optOptW[T](oo: Sig#Option[Sig#Option[T]]): OptionOptionW[Sig, T] =
+    new OptionOptionW[Sig, T](oo)
 
 }
 
@@ -879,7 +887,8 @@ object Syntax {
 # using `Syntax`
 
 ```scala
-class Program[Sig <: OptionSig](implicit Ops: OptionOps[Sig], Syntax: Syntax[Sig]) extends App {
+class Program[Sig <: OptionSig](implicit Ops: OptionOps[Sig], Syntax: Syntax[Sig])
+extends App {
   import Ops._
   import Syntax._
   println(some(some(42)).flatten.show) // will print Some(42)
@@ -890,19 +899,20 @@ object MainWithScalaOption extends Program[ScalaOption]
 
 --
 
-not needed: `Flatten: Flatten[Sig]` and `Show: Show[Sig]`
+<span>note</span>: no explicit instance of `Flatten[Sig]` or `Show[Sig]` needed
 
 
 
 
 ---
 
-# `Option[A]` as Java 8 `java.util.Optional[_ <: A]`
+# `Option[A]` as Java8's `Optional[A]`
 
 ```scala
-trait Java8Option extends OptionSig {
+import java.util.Optional
+import java.util.function.{ Function => F, Supplier }
 
-  import java.util.Optional
+trait Java8Option extends OptionSig {
 
   type Option[+A] = Optional[_ <: A]
 
@@ -913,9 +923,6 @@ trait Java8Option extends OptionSig {
 }
 
 object Java8Option {
-
-  import java.util.Optional
-  import java.util.function.{ Function => F, Supplier }
 
   implicit object Ops extends OptionOps[Java8Option] {
 
@@ -975,8 +982,9 @@ object NullOption {
 
 # they all work the same
 
-```
-class Program[Sig <: OptionSig](implicit Ops: OptionOps[Sig], Syntax: Syntax[Sig]) extends App {
+```scala
+class Program[Sig <: OptionSig](implicit Ops: OptionOps[Sig], Syntax: Syntax[Sig])
+extends App {
   import Ops._
   import Syntax._
   println(Some(Some(42)).flatten.show) // will print Some(42)
@@ -997,6 +1005,8 @@ object MainWithNullOption extends Program[NullOption]
 ---
 
 # look at the files in this order
+
+Code at https://github.com/betehess/talks/tree/master/2014/06/cata-visitor-adt
 
 * typecasting.scala
 * typecasting2.scala
@@ -1033,8 +1043,8 @@ object MainWithNullOption extends Program[NullOption]
 
 
     </textarea>
-    <!-- script src="http://gnab.github.io/remark/downloads/remark-latest.min.js" type="text/javascript"-->
-    <script src="http://gnab.github.io/remark/downloads/remark-0.6.4.min.js" type="text/javascript">
+    <script src="http://gnab.github.io/remark/downloads/remark-latest.min.js" type="text/javascript">
+    <!-- script src="http://gnab.github.io/remark/downloads/remark-0.6.5.min.js" type="text/javascript"-->
     </script>
     <script type="text/javascript">
      var slideshow = remark.create();
