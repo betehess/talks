@@ -299,7 +299,7 @@ println(eval(expr)) // prints 5
 
 ---
 
-# `Option[A]` data type
+# Option[A] data type
 
 ```scala
 sealed trait Option[+A]
@@ -321,7 +321,7 @@ assert(flatten(Some(None)) == None)
 
 ---
 
-# class hierarchy for `Option[A]`
+# class hierarchy for Option[A]
 
 .center[![Option class diagram](option.png)]
 
@@ -399,7 +399,7 @@ trait ShowOption extends OptionModule {
 
 ---
 
-# `OptionInt` as visitor [1/2]
+# OptionInt as visitor [1/2]
 
 ```scala
 trait OptionVisitorModule extends OptionModule {
@@ -424,7 +424,7 @@ trait OptionVisitorModule extends OptionModule {
 
 ---
 
-# `OptionInt` as visitor [1/2]
+# OptionInt as visitor [2/2]
 
 ```scala
   def some(x: Int): OptionInt = new SomeInt(x)
@@ -443,7 +443,7 @@ trait OptionVisitorModule extends OptionModule {
 
 ---
 
-# `OptionInt` as Scala's `Option[Int]`
+# OptionInt as scala.class[.]Option[Int]
 
 ```scala
 trait ScalaOptionModule extends OptionModule {
@@ -698,7 +698,7 @@ object MainWithScalaOption extends Program[ScalaOption]
 
 ---
 
-# parameterized `Option[A]`
+# parameterized Option[A]
 
 ```scala
 import scala.language.higherKinds
@@ -729,7 +729,7 @@ trait OptionOps[Sig <: OptionSig] {
 
 ---
 
-# `Show` functor
+# Show functor
 
 ```scala
 class Show[Sig <: OptionSig](implicit ops: OptionOps[Sig]) {
@@ -754,7 +754,7 @@ object Show {
 
 ---
 
-# `Option[A]` as Scala's `Option[A]`
+# Option[A] as scala.class[.]Option[A]
 
 ```scala
 trait ScalaOption extends OptionSig {
@@ -789,7 +789,7 @@ object ScalaOption {
 
 ---
 
-# a program using `Option[A]`
+# a program using Option[A]
 
 ```scala
 class Program[Sig <: OptionSig](implicit Ops: OptionOps[Sig], Show: Show[Sig]) extends App {
@@ -807,7 +807,7 @@ object MainWithScalaOption extends Program[ScalaOption]
 
 ---
 
-# `Flatten` functor
+# Flatten functor
 
 ```scala
 class Flatten[Sig <: OptionSig](implicit ops: OptionOps[Sig]) {
@@ -835,7 +835,7 @@ object Flatten {
 
 ---
 
-# using `Flatten`
+# using Flatten
 
 ```scala
 class Program[Sig <: OptionSig](implicit Ops: OptionOps[Sig], Show: Show[Sig], Flatten: Flatten[Sig]) extends App {
@@ -851,7 +851,7 @@ object MainWithScalaOption extends Program[ScalaOption]
 
 ---
 
-# enhanced syntax for `Option[A]`
+# enhanced syntax for Option[A]
 
 how to write `myOption.flatten.show`?
 
@@ -889,7 +889,7 @@ object Syntax {
 
 ---
 
-# using `Syntax`
+# using Syntax
 
 ```scala
 class Program[Sig <: OptionSig](implicit Ops: OptionOps[Sig], Syntax: Syntax[Sig])
@@ -911,7 +911,7 @@ object MainWithScalaOption extends Program[ScalaOption]
 
 ---
 
-# `Option[A]` as Java8's `Optional[A]`
+# Option[A] as java.class[.]util.class[.]Optional[A]
 
 ```scala
 import java.util.Optional
@@ -949,7 +949,7 @@ object Java8Option {
 
 ---
 
-# `Option[A]` as `Any` and `Null`
+# Option[A] as Any and Null
 
 ```scala
 trait NullOption extends OptionSig {
