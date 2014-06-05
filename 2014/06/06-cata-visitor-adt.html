@@ -21,7 +21,7 @@
 
 class: center, middle
 
-# Visitor Pattern, Algebraic Data Type & Catamorphism
+# Visitor&nbsp;Pattern, Catamorphism and Algebraic&nbsp;Data&nbsp;Type
 
 Alexandre Bertails, Pellucid Analytics
 
@@ -34,10 +34,9 @@ Alexandre Bertails, Pellucid Analytics
 `1 * 2 + 3` evaluates to `5`
 
 
-
 ---
 
-# classes as tags
+# classes as tags for types
 
 ```scala
 class Num(val n: Int)
@@ -319,6 +318,12 @@ assert(flatten(Some(Some(42))) == Some(42))
 
 assert(flatten(Some(None)) == None)
 ```
+
+---
+
+# class hierarchy for `Option[A]`
+
+.center[![Option class diagram](option.png)]
 
 
 ---
@@ -980,7 +985,7 @@ object NullOption {
 
 ---
 
-# they all work the same
+# they all work the same way
 
 ```scala
 class Program[Sig <: OptionSig](implicit Ops: OptionOps[Sig], Syntax: Syntax[Sig])
@@ -1004,9 +1009,9 @@ object MainWithNullOption extends Program[NullOption]
 
 ---
 
-# look at the files in this order
+# sources
 
-Code at https://github.com/betehess/talks/tree/master/2014/06/cata-visitor-adt
+Code at https://github.com/betehess/talks/tree/gh-pages/2014/06/cata-visitor-adt
 
 * typecasting.scala
 * typecasting2.scala
@@ -1025,6 +1030,7 @@ Code at https://github.com/betehess/talks/tree/master/2014/06/cata-visitor-adt
 * option-syntax.scala
 * option-impls.scala
 
+Slides at http://betehess.github.io/talks/2014/06/06-cata-visitor-adt.html
 
 
 ---
