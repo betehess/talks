@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Web APIs</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style type="text/css">
+     @import url(http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+     @import url(http://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+     @import url(http://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+     body { font-family: 'Droid Serif'; }
+     h1, h2, h3 {
+       font-family: 'Yanone Kaffeesatz';
+       font-weight: normal;
+     }
+     .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Web APIs
+
+Alexandre Bertails, [Pellucid Analytics](http://pellucid.com/)
+
+[@bertails](http://twitter.com/bertails)
+
+???
+
+This talk in a nutshell:
+
+* people don't get basics of HTTP (media type) so quick summary
+
+* intuitions behind REST
+
+* limits for REST and the media type approach *at scale*
+
+* making JSON a hypermedia format
+
+  * the path to RDF through JSON-LD
+
+* LDP as state-of-the-art REST API covering most use-cases
+
+
+
+---
+
+# Web APIs
+
+Who are the users of my API?
+
+What do they do with it?
+
+How will they interact with it?
+
+???
+
+I don't know how people will use the API
+
+The value is in the interaction with other APIs
+
+
+
+--
+
+## REST
+
+* hypermedia
+
+* HATEOAS
+
+???
+
+* consumers
+
+* developers
+
+* patterns: easier
+
+* read HTTP spec + Roy's dissertation?
+
+
+
+---
+
+# HTTP, back to the basics
+
+* resources
+
+* representations
+
+* semantics
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+# HTTP interactions
+
+~~~http
+$ HEAD https://data.example.com/company/
+Content-Type: application/json
+~~~
+
+a **media type specification** sets out
+
+* formats
+
+* processing model
+
+* hypermedia controls
+
+for its representation
+
+???
+
+Accepting a media type means you understand how to process that format
+when interacting with a service
+
+
+
+
+
+---
+
+# media type
+
+
+**[Content-Type](http://tools.ietf.org/html/draft-ietf-httpbis-p2-semantics-26#section-3.1.1.5) and [Media Type](http://tools.ietf.org/html/draft-ietf-httpbis-p2-semantics-26#section-3.1.1.1) as defined in [HTTPBIS](http://tools.ietf.org/html/draft-ietf-httpbis-p2-semantics-26)**
+
+> HTTP uses Internet Media Types \[[RFC2046](http://tools.ietf.org/html/rfc2046)\] in the Content-Type
+> ([Section 3.1.1.5](http://tools.ietf.org/html/draft-ietf-httpbis-p2-semantics-26#section-3.1.1.5)) [...] header fields in order
+> to provide open and extensible data typing [...].
+> Media types define both a data format and various processing models.
+
+---
+
+# IANA registry for media types
+
+**[IANA registry for Media Types](https://www.iana.org/assignments/media-types/media-types.xhtml)**
+
+| Name |Template                                                                          | Reference                                     |
+|:------ |:-----------------------------------------------------------------------------------|:-----------------------------------------------|
+| json | [application/json](https://www.iana.org/assignments/media-types/application/json) | \[[RFC7158](http://www.iana.org/go/rfc7158)\] |
+
+---
+
+# JSON
+
+**The JavaScript Object Notation (JSON) Data Interchange Format \[[RFC7159](http://tools.ietf.org/html/rfc7159)\]**
+
+> JSON can represent **four primitive types** (strings, numbers, booleans,
+> and null) and **two structured types** (objects and arrays).
+
+--
+
+<big><center>No processing model defined in JSON! (neither in JSON-LD, HAL, etc.)</center></big>
+
+???
+
+first conclusion: JSON may be the worst common hypermedia format for Web APIs
+
+
+
+
+---
+
+# extending media type semantics
+
+## what would the RESTafarian do?
+
+probably use a [vendor specific media type](https://tools.ietf.org/html/rfc6838#page-6)
+
+~~~http
+$ HEAD https://data.example.com/company/
+Content-Type: application/vnd.example.company+json
+~~~
+
+
+
+
+
+
+
+---
+
+# `Link` header
+
+## rel=profile Link header
+
+> The ['profile' link relation
+> type](http://tools.ietf.org/html/rfc6906) [...]  allows resource
+> representations to indicate that they are following one or more
+> profiles.  A profile is defined **not to alter the semantics** of
+> the resource representation itself, but to allow clients to **learn
+> about additional semantics** [...] in addition to those defined by
+> the media type [...].
+
+~~~http
+$ HEAD https://data.example.com/company/
+Content-Type: application/json
+Link: <https://data.example.com/ontology#Company>; rel="profile"
+~~~
+
+
+
+---
+
+# HATEOAS?
+
+> Hypermedia can be the engine of a single API.
+> 
+> Hypermedia cannot be the engine of cross-API interactions.
+
+.right[Ruben Verborgh, [Hypermedia Cannot be the Engine](http://www.slideshare.net/RubenVerborgh/hypermedia-cannot-be-the-engine)]
+???
+
+In a hypermedia system, application states are communicated through representation of uniquely identifiable resources. Th eindeitifers of the states to which de application can transition are embedded in the representation of the current state in the form of links.
+
+
+---
+
+# focusing on data
+
+* HATEOAS is like a hypermedia state machine
+
+* data modeling is a special case for application state
+
+* media type encodes kind/type
+
+* but few missing interactions eg. CRUD
+
+
+
+
+
+
+
+
+---
+
+# data patterns in JSON
+
+* encodings
+
+* links
+
+* types
+
+* disambiguating schemas
+
+Let's make JSON a hypermedia format :-)
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+# a 1st version
+
+**an Industry entity**
+
+~~~http
+$ GET https://data.example.com/industry/q6po09
+Content-Type: application/json
+
+{
+ "id": "q6po09",
+ "name": "Fruits"
+}
+~~~
+
+**a Company entity**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/json
+
+{
+ "id": "c34dap",
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": "q6po09"
+}
+~~~
+
+documentation probably available at something like https://data.example.com/api/documentation
+
+
+
+---
+
+# things, not String-s
+
+**an Industry entity**
+
+~~~http
+$ GET https://data.example.com/industry/q6po09
+Content-Type: application/json
+
+{
+ "@id": "https://data.example.com/industry/q6po09",
+ "name": "Fruits"
+}
+~~~
+
+**a Company entity**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/json
+
+{
+ "@id": "https://data.example.com/company/c34dap",
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": { "@id": "https://data.example.com/industry/q6po09" }
+}
+~~~
+
+
+
+
+
+---
+
+# **this** is its own `@id`
+
+**an Industry entity**
+
+~~~http
+$ GET https://data.example.com/industry/q6po09
+Content-Type: application/json
+
+{
+ "name": "Fruits"
+}
+~~~
+
+**a Company entity**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/json
+
+{
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": { "@id": "https://data.example.com/industry/q6po09" }
+}
+~~~
+
+
+
+
+
+---
+
+# **what** are we dealing with?
+
+**an Industry entity**
+
+~~~http
+$ GET https://data.example.com/industry/q6po09
+Content-Type: application/json
+
+{
+ "type": "Industry",
+ "name": "Fruits"
+}
+~~~
+
+**a Company entity**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/json
+
+{
+ "type": "Company",
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": { "@id": "https://data.example.com/industry/q6po09" }
+}
+~~~
+
+
+
+
+
+
+---
+
+# `@type` + URL
+
+**an Industry entity**
+
+~~~http
+$ GET https://data.example.com/industry/q6po09
+Content-Type: application/json
+
+{
+ "@type": { "@id": "https://data.example.com/ontology#Industry" },
+ "name": "Fruits"
+}
+~~~
+
+**a Company entity**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/json
+
+{
+ "@type": { "@id": "https://data.example.com/ontology#Company" },
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": { "@id": "https://data.example.com/industry/q6po09" }
+}
+~~~
+
+
+
+
+
+
+
+---
+
+# disambiguating attributes [1/3]
+
+How to distinguish an industry's name from a company's name?
+
+**an Industry entity**
+
+~~~http
+$ GET https://data.example.com/industry/q6po09
+Content-Type: application/json
+
+{
+ "@type": { "@id": "https://data.example.com/ontology#Industry" },
+ "name": "Fruits"
+}
+~~~
+
+**a Company entity**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/json
+
+{
+ "@type": { "@id": "https://data.example.com/ontology#Company" },
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": { "@id": "https://data.example.com/industry/q6po09" }
+}
+~~~
+
+
+
+
+
+
+
+---
+
+# disambiguating attributes [2/3]
+
+How to distinguish an industry's name from a company's name?
+
+**an Industry entity**
+
+~~~http
+$ GET https://data.example.com/industry/q6po09
+Content-Type: application/json
+
+{
+ "@type": { "@id": "https://data.example.com/ontology#Industry" },
+ "https://data.example.com/ontology#industryName": "Fruits"
+}
+~~~
+
+**a Company entity**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/json
+
+{
+ "@type": { "@id": "https://data.example.com/ontology#Company" },
+ "https://data.example.com/ontology#companyName": "Apple",
+ "ticker": "AAPL",
+ "industry": { "@id": "https://data.example.com/industry/q6po09" }
+}
+~~~
+
+
+
+
+
+---
+
+# disambiguating attributes [3/3]
+
+How to distinguish an industry's name from a company's name?
+
+**a Company entity**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/json
+
+{
+ "@context": {
+  "name": { "@id": "https://data.example.com/ontology#companyName" }
+ },
+ "@type": { "@id": "https://data.example.com/ontology#Company" },
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": { "@id": "https://data.example.com/industry/q6po09" }
+}
+~~~
+
+
+
+
+
+
+---
+
+# contextualized data: typed values
+
+**a Company entity**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/json
+
+{
+ "@context": {
+  "name": { "@id": "https://data.example.com/ontology#companyName" },
+  "ticker": { "@id": "https://data.example.com/ontology#ticker" },
+  "industry": { "@id": "https://data.example.com/ontology#industry" }
+ },
+ "@type": { "@id": "https://data.example.com/ontology#Company" },
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": { "@id": "https://data.example.com/industry/q6po09" }
+}
+~~~
+
+
+
+
+
+
+
+
+---
+
+# contextualized data: default vocabulary
+
+**a Company entity**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/json
+
+{
+ "@context": {
+  "@vocab": "https://data.example.com/ontology#",
+  "name": "companyName",
+  "ticker": {
+   "@type": "Ticker"
+  },
+  "industry": {
+   "@type": "@id"
+  }
+ },
+ "@type": "Company",
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": "https://data.example.com/industry/q6po09"
+}
+~~~
+
+
+
+
+
+
+
+
+---
+
+# JSON-LD
+
+**a Company entity**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/ld+json
+
+{
+ "@context": {
+  "@vocab": "https://data.example.com/ontology#",
+  "name": "companyName",
+  "ticker": { "@type": "Ticker" },
+  "industry": { "@type": "@id" }
+ },
+ "@type": "Company",
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": "https://data.example.com/industry/q6po09"
+}
+~~~
+
+---
+
+# not just yet another media type
+
+* is a [standard](http://www.w3.org/TR/json-ld/)
+
+* [playground](http://json-ld.org/playground/index.html)
+
+* [in use](https://github.com/json-ld/json-ld.org/wiki/Users-of-JSON-LD)
+
+  * Google, BBC, Microsoft, Yandex, etc.
+
+
+
+
+
+
+---
+
+# Contextualized data: external context
+
+**external context**
+
+~~~http
+$ GET https://data.example.com/general-context.jsonld
+Content-Type: application/ld+json
+
+{
+ "@context": {
+  "@vocab": "https://data.example.com/ontology#",
+  "name": "companyName",
+  "ticker": { "@type": "Ticker" },
+  "industry": { "@type": "@id" }
+ }
+}
+~~~
+
+**a Company entity**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/json
+Link: <https://data.example.com/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"
+
+{
+ "@type": "Company",
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": "https://data.example.com/industry/q6po09"
+}
+~~~
+
+
+
+
+
+
+
+
+
+
+---
+
+# **linking** vs embedding
+
+**an Industry entity**
+
+~~~http
+$ GET https://data.example.com/industry/q6po09
+Content-Type: application/ld+json
+
+{
+ "@context": { ... },
+ "@type": "Industry",
+ "name": "Fruits"
+}
+~~~
+
+**a Company entity**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/ld+json
+
+{
+ "@context": { ... },
+ "@type": "Company",
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": "https://data.example.com/industry/q6po09"
+}
+~~~
+
+
+
+
+
+
+
+
+---
+
+# linking vs **embedding**
+
+**a Company entity with its Industry entity**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/ld+json
+
+{
+ "@context": { ... },
+ "@type": "Company",
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": {
+  "@type": "Industry",
+  "name": "Fruits"
+ }
+}
+~~~
+
+
+
+
+
+
+---
+
+# deep linking
+
+**a Company entity with its Industry entity**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/ld+json
+
+{
+ "@context": { ... },
+ "@type": "Company",
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": {
+  "@id": "#q6po09",
+  "@type": "Industry",
+  "name": "Fruits"
+ }
+}
+~~~
+
+Now I could use `<https://data.example.com/company/c34dap#q6po09>` to speak about the `Industry` referenced from the document defining it.
+
+
+
+
+
+---
+
+# inlining
+
+**a Company entity inlining the linked Industry entity**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/ld+json
+
+{
+ "@context": { ... },
+ "@type": "Company",
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": {
+  "@id": "https://data.example.com/industry/q6po09",
+  "@type": "Industry",
+  "name": "Fruits"
+ }
+}
+~~~
+
+**remarks**
+
+* all (or part of) `<https://data.example.com/industry/q6po09>`'s state is inlined
+* the Industry's identity+state is not under this Company's control
+  * could even live on a different domain!
+* applications could decide to follow links to get authoritative state
+
+
+
+
+
+---
+
+# Summary so far
+
+**started with**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/json
+
+{
+ "id": "c34dap",
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": "q6po09"
+}
+~~~
+
+--
+
+**ended up with something like**
+
+~~~http
+$ GET https://data.example.com/company/c34dap
+Content-Type: application/ld+json
+
+{
+ "@context": { ... },
+ "@type": "Company",
+ "name": "Apple",
+ "ticker": "AAPL",
+ "industry": "https://data.example.com/industry/q6po09"
+}
+~~~
+
+
+
+---
+
+# Immediate benefits
+
+* entities are **referenced**, **embedded** and **linked** together
+
+* we get for free **provenance** and **data authority**
+
+* attributes are **disambiguated** and can be **interrogated**
+
+* values are **typed** and can natively be **links**
+
+* vocabularies can be **shared**, **reused** and even **checked**
+
+
+
+
+
+
+---
+
+# introducing LDP
+
+* **L**inked **D**ata **P**latform
+
+* the intersection of REST and RDF
+
+* being specced at W3C for the past 3 years
+
+* state-of-the-art of REST APIs
+
+
+
+---
+
+# Container model
+
+**the usual**
+
+~~~http
+$ GET https://data.example.com/company/
+Content-Type: application/json
+
+{
+ "contains": [ "https://data.example.com/company/c34dap", ... ]
+}
+~~~
+
+**becomes (introducing the [LDP](http://www.w3.org/TR/ldp/) model)**
+
+~~~http
+$ GET https://data.example.com/company/
+Content-Type: application/ld+json
+Link: <http://www.w3.org/ns/ldp#BasicContainer>; rel="type"
+
+{
+ "@context": {
+  "ldp": "http://www.w3.org/ns/ldp#",
+  "ldp:contains": { "@container": "@list", "@type": "@id" }
+ },
+ "@type": [ "Companies", "ldp:BasicContainer" ],
+ "ldp:contains": [
+  "https://data.example.com/company/c34dap",
+  ...
+ ]
+}
+~~~
+
+
+
+
+---
+
+# Container model + inlining
+
+**Container's state + inlined members**
+
+~~~http
+$ GET https://data.example.com/company/
+Content-Type: application/ld+json
+Link: <http://www.w3.org/ns/ldp#BasicContainer>; rel="type"
+
+{
+ "@context": { ... },
+ "@type": [ "Companies", "ldp:BasicContainer" ],
+ "ldp:contains": [
+  {
+   "@id": "https://data.example.com/company/c34dap",
+   "@type": "Company",
+   "ticker": "AAPL",
+   "name": "Apple",
+   "industry": {
+    "@id": "https://data.example.com/industry/q6po09",
+    "@type": "Industry",
+    "name": "Fruits"
+   }
+  },
+  ...
+ ]
+}
+~~~
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+# enabling LDP interaction model
+
+**rel=type Link header**
+
+> The ["type" link
+> relation](https://tools.ietf.org/html/rfc6903#section-6) can be used
+> to indicate that the context resource is an instance of the resource
+> identified by the target Internationalized Resource Identifier
+> (IRI).
+
+**in LDP**
+
+> The presence of this header asserts that the server complies with
+> the LDP specification's constraints on HTTP interactions with LDPRs,
+> that is it asserts that the resource has Etags, has an RDF
+> representation, and so on, which is not true of all Web resources
+> served as RDF media types.
+
+~~~http
+$ HEAD https://data.example.com/company/
+Content-Type: application/ld+json
+Link: <http://www.w3.org/ns/ldp#BasicContainer>; rel="type"
+~~~
+
+
+
+
+
+
+
+
+
+---
+
+# LDP interaction model
+
+**resources**
+
+* Resource (LDPR) ← RDF Source (LDPRS) ← Container (LDPC) ← Basic Container (Basic Container)
+
+**affordance**
+
+* advertised through `rel=type` Link header, **not** `Content-Type`
+
+* a GET on a container (LDPC) returns its state (ie. its members)
+
+* resources (LDPR) are created by POSTing to the container
+
+  * HTTP 201 Created + `Location` header
+
+* use DELETE to remove a member
+
+* use PUT to override the state of a member
+
+* use PATCH for partial updates
+
+
+
+
+
+
+
+---
+
+# [LDP Paging](https://dvcs.w3.org/hg/ldpwg/raw-file/default/ldp-paging.html) (Working Draft) [1/2]
+
+**[HTTP 303 See Other](http://tools.ietf.org/html/draft-ietf-httpbis-p2-semantics-26#page-56)**
+
+> A 303 response to a GET request indicates that the origin server does
+> not have a representation of the target resource [...] the Location field
+> value refers to a resource that is descriptive of the target
+> resource
+
+**also**
+
+* server has control over the pagination mechanism
+
+* client sets preferences
+
+* semantics: snapshot, consistency, etc.
+
+---
+
+# [LDP Paging](https://dvcs.w3.org/hg/ldpwg/raw-file/default/ldp-paging.html) (Working Draft) [2/2]
+
+
+**use Link relations eg. `rel='next'`**
+
+~~~http
+$ GET https://data.example.com/company/
+303 See Other
+Location: https://data.example.com/company/?p=5YjF
+~~~
+
+~~~http
+$ GET https://data.example.com/company/?p=5YjF
+200 OK
+Link: <https://data.example.com/company/?p=AyOW>; rel="next"
+Content-Type: application/ld+json
+
+{ ... }
+~~~
+
+Save a round-trip with HTTP 333 ([being standardised](http://lists.w3.org/Archives/Public/www-tag/2014Jan/0023.html))
+
+
+
+
+
+---
+
+# services
+
+**make it discoverable**
+
+~~~http
+$ HEAD https://data.example.com/company/
+Content-Type: application/ld+json
+Link: <https://data.example.com/company/?>; rel="http://data.example.com/api#queryService"
+~~~
+
+Use Link relation again (not yet standardised)
+
+**example**
+
+~~~http
+$ GET https://data.example.com/company/?offset=100&limit=50
+~~~
+
+
+
+
+
+
+
+---
+
+# ad-hoc service-oriented API [1/2]
+
+~~~http
+$ GET https://data.example.com/api/getCompaniesByIndustry?industryName="Fruits"
+Content-Type: application/ld+json
+
+{
+ "@context": { ... },
+ "results": [
+   { "@id": "https://data.example.com/company/c34dap", ... },
+   ...
+ ]
+}
+~~~
+
+* domain aware
+
+* more capabilities
+
+* requires to read documentation
+
+* return resource URIs and use inlining when needed
+
+---
+
+# ad-hoc service-oriented API [2/2]
+
+**going further**
+
+* general purpose service-oriented API?
+
+* analytics
+
+
+
+
+
+---
+
+# error handling
+
+> LDP servers MUST publish any constraints on LDP clients’ ability to create or update LDPRs, by adding a Link header with rel='describedby' [RFC5988] to all responses to requests which fail due to violation of those constraints. [[LDP 4.2.1.2](http://www.w3.org/TR/ldp/#h5_ldpr-gen-pubclireqs)]
+
+* so basically, HTTP 4xx + `rel='describedby'` Link header
+
+* use HTTP 400 for application-specific error [[LDP ISSUE-98](https://www.w3.org/2013/meeting/ldp/2014-05-05#ISSUE__2d_98)]
+
+* for machine readable errors, consider *Problem Details for HTTP APIs* [[http-problem-06](https://tools.ietf.org/html/draft-nottingham-http-problem-06)]
+
+
+
+
+
+---
+
+# to read
+
+**HTTP/REST**
+
+* [Web Client Programming with Perl](http://oreilly.com/openbook/webclient/ch03.html)
+* http://www.slideshare.net/RubenVerborgh/hypermedia-cannot-be-the-engine
+
+**LDP**
+
+* [LDP 1.0 Primer (Editor's Draft)](https://dvcs.w3.org/hg/ldpwg/raw-file/tip/ldp-primer/ldp-primer.html)
+* [LDP 1.0 (Editor's Draft)](https://dvcs.w3.org/hg/ldpwg/raw-file/default/ldp.html)
+
+**RDF**
+
+* http://www.w3.org/TR/2014/REC-turtle-20140225/
+* http://semanticweb.com/introduction-to-rdf_b17953
+* http://www.w3.org/TR/2012/REC-rdb-direct-mapping-20120927/
+
+
+
+
+
+    </textarea>
+    <!-- script src="http://gnab.github.io/remark/downloads/remark-latest.min.js" type="text/javascript"-->
+    <script src="http://gnab.github.io/remark/downloads/remark-0.6.5.min.js" type="text/javascript">
+    </script>
+    <script type="text/javascript">
+     var slideshow = remark.create();
+    </script>
+  </body>
+</html>
